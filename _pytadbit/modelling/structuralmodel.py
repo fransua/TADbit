@@ -485,7 +485,7 @@ class StructuralModel(dict):
 
         return (possibles, outdot.count(False), area, total, acc_parts)
 
-    def get_volume(self, grain_range=(10, 80), cuts=3):
+    def get_volume(self, grain_range=(10, 80), cuts=3, scale=1, _debug=False):
         '''
         Basically this is about computing the volume of these cubes:
             _____    _____    _____
@@ -541,7 +541,7 @@ class StructuralModel(dict):
         
         maxd = max(dx, dy, dz)
         
-        avg_radii = self.contour() / size / maxd / cuts
+        avg_radii = self.contour() / size / maxd / cuts * scale
         
         results = []
         grain = grain_range[0]
@@ -596,13 +596,19 @@ class StructuralModel(dict):
                 grain += 1
 
         # find local minima/maxima in periods
-        local_max = []
-        local_min = []
-        for n, v in enumerate(results[1:-1]):
-            if max(results[n:n + 3]) == v:
-                local_max.append((n + 1, v))
-            if min(results[n:n + 3]) == v:
-                local_min.append((n + 1, v))
+        try:
+            local_max = []
+            local_min = []
+            for n, v in enumerate(results[1:-1]):
+                if max(results[n:n + 3]) == v:
+                    local_max.append((n + 1, v))
+                if min(results[n:n + 3]) == v:
+                    local_min.append((n + 1, v))
+        except IndexError:
+            if _debug:
+                return results, local_min, local_max
+            raise Exception(('ERROR: unable to find loca minima or maxima, '
+                             'try using a wider grain range.'))
 
         if local_min[0][0] + 1 != local_max[0][0]:
             local_max.pop(0)
@@ -615,10 +621,17 @@ class StructuralModel(dict):
             pairy.append((yd+yu)/2)
         
         # the last of these points is the best
-        final_ratio = pairy[-1]
+        try:
+            final_ratio = pairy[-1]
+        except IndexError:
+            if _debug:
+                return results, local_min, local_max, pairx, pairy
+            raise Exception(('ERROR: unable to find loca minima or maxima, '
+                             'try using a wider grain range.'))
         
         # DEBUG:
-        # return results, local_min, local_max, pairx, pairy
+        if _debug:
+            return results, local_min, local_max, pairx, pairy
 
         # return ratio multiplied by total Volume of space considered and
         # converted to cubic micrometers
