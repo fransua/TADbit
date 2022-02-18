@@ -701,7 +701,7 @@ def fragment_size(fnam, savefig=None, nreads=None, max_size=99.9, axe=None,
         - 'median' median of the distribution
         - 'mean' mean of the distribution
         - 'perc_max' percentil defined by the other parameter 'max_size'
-        - 'first_deacay' starting from the median of the distribution to the
+        - 'first_decay' starting from the median of the distribution to the
             first window where 10 consecutive insert sizes are counted less than
             a given value (this given value is equal to the sum of all
             sizes divided by 100 000)
@@ -711,7 +711,6 @@ def fragment_size(fnam, savefig=None, nreads=None, max_size=99.9, axe=None,
 
     :returns: the median value and the percentile inputed as max_size.
     """
-    distr = {}
     genome_seq = OrderedDict()
     pos = 0
     fhandler = open(fnam)

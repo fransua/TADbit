@@ -64,11 +64,21 @@ def apply_filter(fnam, outfile, masked, filters=None, reverse=False,
 
     current = set([v for v, _ in list(filter_handlers.values())])
     count = 0
+    count_cis_close = 0
+    count_cis_far = 0
+    count_trans = 0
     if reverse:
         for line in fhandler:
-            read = line.split('\t', 1)[0]
+            read, rest = line.split('\t', 1)
             if read in current:
                 count += 1
+                c1, p1, _, _, _, _, c2, p2, _ = rest.split('\t', 8)
+                if c1 != c2:
+                    count_trans += 1
+                elif abs(int(p2) - int(p1)) < 10_000:
+                    count_cis_close += 1
+                else:
+                    count_cis_far += 1
                 out.write(line)
             else:
                 continue
@@ -84,9 +94,16 @@ def apply_filter(fnam, outfile, masked, filters=None, reverse=False,
             current = set([v for v, _ in list(filter_handlers.values())])
     else:
         for line in fhandler:
-            read = line.split('\t', 1)[0]
+            read, rest = line.split('\t', 1)
             if read not in current:
                 count += 1
+                c1, p1, _, _, _, _, c2, p2, _ = rest.split('\t', 8)
+                if c1 != c2:
+                    count_trans += 1
+                elif abs(int(p2) - int(p1)) < 10_000:
+                    count_cis_close += 1
+                else:
+                    count_cis_far += 1
                 out.write(line)
                 continue
             # iterate over different filters to update current filters
@@ -104,7 +121,7 @@ def apply_filter(fnam, outfile, masked, filters=None, reverse=False,
             count, 'filtered' if reverse else 'valid'))
     out.close()
     fhandler.close()
-    return count
+    return count, count_cis_close, count_cis_far, count_trans
 
 
 def filter_reads(fnam, output=None, max_molecule_length=500,
