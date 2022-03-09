@@ -1332,7 +1332,8 @@ def plot_HiC_matrix(in_matrix, bad_color=None, triangular=False, axe=None,
         matrix[matrix==0] = mini
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        matrix = np.ma.masked_where(np.isnan(matrix), transform(matrix))
+        matrix = transform(matrix)
+        matrix = np.ma.masked_where(np.isnan(matrix), matrix)
 
     if triangular:
         if not axe:
@@ -1368,6 +1369,8 @@ def plot_HiC_matrix(in_matrix, bad_color=None, triangular=False, axe=None,
         axe1.set_ylim(-0.5, len(matrix) - 0.5)
 
     data = [i for d in matrix for i in d if np.isfinite(i)]
+    if not data:
+        raise Exception('ERROR: all NaN data')
     try:
         mindata = np.nanmin(data)
         maxdata = np.nanmax(data)
@@ -1388,8 +1391,8 @@ def plot_HiC_matrix(in_matrix, bad_color=None, triangular=False, axe=None,
                        orientation='vertical' if triangular else 'horizontal',
                        bins=50, histtype='step')
     _  = axe2.imshow(gradient, aspect='auto', extent=(
-        (mindata, maxdata, 0, max(h[0])) if triangular else
-        (0, max(h[0]), mindata, maxdata)), **kwargs)
+        (mindata, maxdata, 0, np.nanmax(h[0])) if triangular else
+        (0, np.nanmax(h[0]), mindata, maxdata)), **kwargs)
     if triangular:
         axe2.set_yticks([])
         axe2.set_xlabel('Hi-C %sinteractions%s' % (
