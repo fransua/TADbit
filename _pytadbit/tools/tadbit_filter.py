@@ -257,22 +257,19 @@ def save_to_db(opts, count, multiples, reads, mreads, n_valid_pairs, masked,
             (Id  , PATHid, Name, Count, Applied, JOBid)
         values
             (NULL,   NULL, '%s',  '%s',    '%s',    %d)
-            """ % (get_path_id(cur, mreads, opts.workdir),
-                   'valid-pairs_cis-close', count_cis_close, '', jobid))
+            """ % ('valid-pairs_cis-close', count_cis_close, '', jobid))
             cur.execute("""
         insert into FILTER_OUTPUTs
             (Id  , PATHid, Name, Count, Applied, JOBid)
         values
             (NULL,   NULL, '%s',  '%s',    '%s',    %d)
-            """ % (get_path_id(cur, mreads, opts.workdir),
-                   'valid-pairs_cis-far', count_cis_far, '', jobid))
+            """ % ('valid-pairs_cis-far', count_cis_far, '', jobid))
             cur.execute("""
         insert into FILTER_OUTPUTs
             (Id  , PATHid, Name, Count, Applied, JOBid)
         values
             (NULL,   NULL, '%s',  '%s',    '%s',    %d)
-            """ % (get_path_id(cur, mreads, opts.workdir),
-                   'valid-pairs_trans', count_trans, '', jobid))
+            """ % ('valid-pairs_trans', count_trans, '', jobid))
         except lite.IntegrityError:
             print('WARNING: already filtered')
             if opts.force:
