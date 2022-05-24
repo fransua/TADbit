@@ -338,7 +338,7 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
                         res = tmpcur.execute("select Path from PATHs where Id = %d" % (pathid))
                         tmppath = res.fetchall()[0][0]
                     except TypeError:
-                        tmppath = 'NULL'
+                        tmppath = None
                     masked1[name] = {'path': tmppath, 'count': count}
             if 'tmpdb' in opts and opts.tmpdb:
                 remove(dbfile1)
@@ -361,7 +361,7 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
                         res = tmpcur.execute("select Path from PATHs where Id = %d" % (pathid))
                         tmppath = res.fetchall()[0][0]
                     except TypeError:
-                        tmppath = 'NULL'
+                        tmppath = None
                     masked2[name] = {'path': tmppath, 'count': count}
             if 'tmpdb' in opts and opts.tmpdb:
                 remove(dbfile2)
@@ -376,6 +376,8 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
                     fh = magic_open(path.join(opts.workdir1, masked1[f]['path']))
                 except FileNotFoundError:
                     fh = magic_open(path.join(opts.workdir1, masked1[f]['path'] + '.gz'))
+                except TypeError:
+                    continue
                 for line in fh:
                     out.write(line)
                 try:
