@@ -148,7 +148,7 @@ def run(opts):
                                 for l in Popen(samtools, stderr=PIPE,
                                                universal_newlines=True).communicate()[1].split('\n')
                                 if 'Version' in l][0])
-        if version >= LooseVersion('1.3.1'):
+        if version > LooseVersion('1.3.1'):
             system(samtools  + ' index -@ %d %s' % (opts.cpus, outbam))
         else:
             system(samtools  + ' index %s' % (outbam))
