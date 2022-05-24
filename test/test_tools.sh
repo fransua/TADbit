@@ -138,11 +138,11 @@ START=$(date +%s);
 echo -e '' | tee -a $LOG
 echo -e $SEP"\n"$SEP | tee -a $LOG
 echo -e 'Normalizing 1/2\n' | tee -a $LOG
-echo -e $SEP"\n   $ " tadbit normalize $tmpdir/rep1 --noX -r 100000 | tee -a $LOG
-tadbit normalize $tmpdir/rep1 --noX -r 100000 2>> $LOG
+echo -e $SEP"\n   $ " tadbit normalize $tmpdir/rep1 --noX -r 100000 --min_count 100 --fast_filter | tee -a $LOG
+tadbit normalize $tmpdir/rep1 --noX -r 100000 --min_count 100 --fast_filter 2>> $LOG
 echo -e 'Normalizing 2/2\n'
-echo -e $SEP"\n   $ " tadbit normalize $tmpdir/rep2 --noX -r 100000 --min_count 100 | tee -a $LOG
-tadbit normalize $tmpdir/rep2 --noX -r 100000 --min_count 100 2>> $LOG
+echo -e $SEP"\n   $ " tadbit normalize $tmpdir/rep2 --noX -r 100000 --min_count 100 --fast_filter | tee -a $LOG
+tadbit normalize $tmpdir/rep2 --noX -r 100000 --min_count 100 --fast_filter 2>> $LOG
 END=$(date +%s)
 echo -e $((END-START)) | awk '{print "=> done in: " int($1/60)"m "int($1%60)"s"}' | tee -a $LOG
 
@@ -161,12 +161,12 @@ START=$(date +%s);
 echo -e '' | tee -a $LOG
 echo -e $SEP"\n"$SEP | tee -a $LOG
 echo -e 'Normalizing\n' | tee -a $LOG
-echo -e $SEP"\n   $ " tadbit normalize $tmpdir/both --noX -r 100000 | tee -a $LOG
-tadbit normalize $tmpdir/both --noX -r 100000 2>> $LOG
-echo -e $SEP"\n   $ " tadbit normalize $tmpdir/both --noX -r 10000 | tee -a $LOG
-tadbit normalize $tmpdir/both --noX -r 10000 2>> $LOG
-echo -e $SEP"\n   $ " tadbit normalize $tmpdir/both --noX -r 20000 --min_count 10 | tee -a $LOG
-tadbit normalize $tmpdir/both --noX -r 20000 --min_count 10 2>> $LOG
+echo -e $SEP"\n   $ " tadbit normalize $tmpdir/both --noX -r 100000 --min_count 100 --fast_filter | tee -a $LOG
+tadbit normalize $tmpdir/both --noX -r 100000 --min_count 100 --fast_filter 2>> $LOG
+echo -e $SEP"\n   $ " tadbit normalize $tmpdir/both --noX -r 10000 --min_count 100 --fast_filter | tee -a $LOG
+tadbit normalize $tmpdir/both --noX -r 10000 --min_count 100 --fast_filter 2>> $LOG
+echo -e $SEP"\n   $ " tadbit normalize $tmpdir/both --noX -r 20000 --min_count 100 --fast_filter | tee -a $LOG
+tadbit normalize $tmpdir/both --noX -r 20000 --min_count 100 --fast_filter 2>> $LOG
 END=$(date +%s)
 echo -e $((END-START)) | awk '{print "=> done in: " int($1/60)"m "int($1%60)"s"}' | tee -a $LOG
 

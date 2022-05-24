@@ -334,8 +334,11 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
                 tmpcur = tmpcon.cursor()
                 tmpcur.execute("select Name, PATHid, Count from filter_outputs")
                 for name, pathid, count in tmpcur.fetchall():
-                    res = tmpcur.execute("select Path from PATHs where Id = %d" % (pathid))
-                    tmppath = res.fetchall()[0][0]
+                    try:
+                        res = tmpcur.execute("select Path from PATHs where Id = %d" % (pathid))
+                        tmppath = res.fetchall()[0][0]
+                    except TypeError:
+                        tmppath = 'NULL'
                     masked1[name] = {'path': tmppath, 'count': count}
             if 'tmpdb' in opts and opts.tmpdb:
                 remove(dbfile1)
@@ -354,8 +357,11 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
                 tmpcur = tmpcon.cursor()
                 tmpcur.execute("select Name, PATHid, Count from filter_outputs")
                 for name, pathid, count in tmpcur.fetchall():
-                    res = tmpcur.execute("select Path from PATHs where Id = %d" % (pathid))
-                    tmppath = res.fetchall()[0][0]
+                    try:
+                        res = tmpcur.execute("select Path from PATHs where Id = %d" % (pathid))
+                        tmppath = res.fetchall()[0][0]
+                    except TypeError:
+                        tmppath = 'NULL'
                     masked2[name] = {'path': tmppath, 'count': count}
             if 'tmpdb' in opts and opts.tmpdb:
                 remove(dbfile2)
