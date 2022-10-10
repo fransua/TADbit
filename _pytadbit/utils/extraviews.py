@@ -1425,10 +1425,9 @@ def plot_HiC_matrix(in_matrix, bad_color=None, triangular=False, axe=None,
                 axe1.vlines(t_start, t_start, t_end, colors='k', lw=pwidth)
                 axe1.vlines(t_end  , t_start, t_end, colors='k', lw=nwidth)
             else:
-                pol1 = plt.Polygon([(t_start,0),
-                                   (t_start+(t_end-t_start)/2,(t_end-t_start)),
-                                   (t_end,0)], ls="--", lw=nwidth, fill=False)
-                axe1.add_patch(pol1)
+                axe1.plot([t_start, t_start + (t_end - t_start) / 2, t_end], 
+                          [0, (t_end - t_start), 0],
+                          ls="--", lw=nwidth, color='k')
             if tad['score'] < 0:
                 for j in range(0, int(t_end) - int(t_start), 2):
                     axe1.plot((t_start    , t_start + j),
