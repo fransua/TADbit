@@ -25,7 +25,7 @@ def parse_fasta(f_names, chr_names=None, chr_filter=None, chr_regexp=None,
 
     WARNING: The order is important
 
-    :param f_names: list of pathes to files, or just a single path
+    :param f_names: list of paths to files, or just a single path
     :param None chr_names: pass list of chromosome names, or just one. If None
        are passed, then chromosome names will be inferred from fasta headers
     :param None chr_filter: use only chromosome in the input list
@@ -81,7 +81,7 @@ def parse_fasta(f_names, chr_names=None, chr_filter=None, chr_regexp=None,
             for line in fhandler:
                 if line.startswith('>'):
                     if header:
-                        genome_seq[header] = ''.join(seq).upper()
+                        genome_seq[header] = seq
                     header = line[1:].split()[0]
                     if bad_chrom(header) or not chr_regexp.match(header):
                         header = 'UNWANTED'
@@ -93,17 +93,14 @@ def parse_fasta(f_names, chr_names=None, chr_filter=None, chr_regexp=None,
                         if verbose:
                             print('Parsing %s as %s' % (line[1:].rstrip(),
                                                         header))
-                    seq = []
+                    seq = 0 if only_length else ''
                     continue
-                seq.append(line.rstrip())
-            if only_length:
-                genome_seq[header] = len(seq)
-            else:
-                genome_seq[header] = ''.join(seq).upper()
+                seq += len(line.rstrip()) if only_length else line.rstrip().upper()
+            genome_seq[header] = seq
             if 'UNWANTED' in genome_seq:
                 del(genome_seq['UNWANTED'])
     else:
-        for fnam in f_names:
+        for f_nam in f_names:
             with magic_open(f_nam) as fhandler:
                 try:
                     while True:
