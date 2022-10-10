@@ -747,6 +747,7 @@ def load_parameters_fromdb(opts):
             mreads = fetched[0][0]
         return biases, mreads
 
+
 def load_tads_fromdb(opts):
     tads=None
     try:
@@ -775,12 +776,12 @@ def load_tads_fromdb(opts):
                     tads_reso = int(tads_res[0][1])
                     tads, _ = parse_tads(tads_path)
                     if tads_reso != opts.reso:
-                        for pos in range(len(tads)):
-                            tads[pos]['start'] = int((tads_reso/opts.reso)*tads[pos]['start'])
-                            tads[pos]['end'] = int((tads_reso/opts.reso)*tads[pos]['end'])
-                            tads[pos]['brk'] = int((tads_reso/opts.reso)*tads[pos]['brk'])
+                        for pos in range(1, len(tads) + 1):
+                            tads[pos]['start'] = int((tads_reso / opts.reso) * tads[pos]['start'])
+                            tads[pos]['end'] = int((tads_reso / opts.reso) * tads[pos]['end'])
+                            tads[pos]['brk'] = int((tads_reso / opts.reso) * tads[pos]['brk'])
             except IndexError:
                 warn("""WARNING: tad definition job not found""")
-    except TypeError:
+    except ValueError:
         tads, _ = parse_tads(opts.tad_def)
     return tads
