@@ -35,6 +35,7 @@ DESC = ('load two working directories with different Hi-C data samples and ' +
 
 def run(opts):
     check_options(opts)
+
     samtools = which(opts.samtools)
     launch_time = time.localtime()
 
@@ -77,7 +78,7 @@ def run(opts):
 
     mkdir(path.join(opts.workdir, '00_merge'))
 
-    if not opts.skip_comparison:
+    if opts.skip_comparison[0] is not None:
         printime('  - loading first sample %s' % (mreads1))
         hic_data1 = load_hic_data_from_bam(mreads1, opts.reso, biases=biases1,
                                            tmpdir=path.join(opts.workdir, '00_merge'),
@@ -103,22 +104,31 @@ def run(opts):
         eigen_corr_fig = path.join(opts.workdir, '00_merge', 'eigen_corr_dat_%s_%s.png' % (opts.reso, param_hash))
 
         printime('  - comparing experiments')
-        printime('    => correlation between equidistant loci')
-        corr, _, scc, std, bads = correlate_matrices(
-            hic_data1, hic_data2, normalized=opts.norm,
-            remove_bad_columns=True, savefig=decay_corr_fig,
-            savedata=decay_corr_dat, get_bads=True)
-        print('         - correlation score (SCC): %.4f (+- %.7f)' % (scc, std))
-        printime('    => correlation between eigenvectors')
-        eig_corr = eig_correlate_matrices(hic_data1, hic_data2, normalized=opts.norm,
-                                          remove_bad_columns=True, nvect=6,
-                                          savefig=eigen_corr_fig,
-                                          savedata=eigen_corr_dat)
-
-        printime('    => reproducibility score')
-        reprod = get_reproducibility(hic_data1, hic_data2, num_evec=20, normalized=opts.norm,
-                                     verbose=False, remove_bad_columns=True)
-        print('         - reproducibility score: %.4f' % (reprod))
+        if 1 not in opts.skip_comparison:
+            printime('    => correlation between equidistant loci')
+            corr, _, scc, std, bads = correlate_matrices(
+                hic_data1, hic_data2, normalized=opts.norm,
+                remove_bad_columns=True, savefig=decay_corr_fig,
+                savedata=decay_corr_dat, get_bads=True)
+            print('         - correlation score (SCC): %.4f (+- %.7f)' % (scc, std))
+        else:
+            corr, scc, std = 0
+            bads = {}
+        if 2 not in opts.skip_comparison:
+            printime('    => correlation between eigenvectors')
+            eig_corr = eig_correlate_matrices(hic_data1, hic_data2, normalized=opts.norm,
+                                            remove_bad_columns=True, nvect=6,
+                                            savefig=eigen_corr_fig,
+                                            savedata=eigen_corr_dat)
+        else:
+            eig_corr = 0
+        if 3 not in opts.skip_comparison:
+            printime('    => reproducibility score')
+            reprod = get_reproducibility(hic_data1, hic_data2, num_evec=20, normalized=opts.norm,
+                                        verbose=False, remove_bad_columns=True)
+            print('         - reproducibility score: %.4f' % (reprod))
+        else:
+            reprod = 0
         ncols = len(hic_data1)
     else:
         ncols = 0
@@ -296,13 +306,15 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
             cur.execute("select id from paths where path = '%s'" % (
                 path.relpath(outbed, opts.workdir)))
             outbedid = cur.fetchall()[0][0]
-        if not opts.skip_comparison:
-            decay_corr = '-'.join(['%.1f' % (v)
-                                   for v in corr[:10:2]]).replace('0.', '.')
-            eigen_corr = '-'.join(['%.2f' % (max(v))
-                                   for v in eig_corr[:4]]).replace('0.', '.')
-        else:
-            decay_corr = eigen_corr = None
+
+        decay_corr = eigen_corr = None
+        if opts.skip_comparison[0] is not None:
+            if decay_corr:
+                decay_corr = '-'.join(['%.1f' % (v)
+                                    for v in corr[:10:2]]).replace('0.', '.')
+            if eig_corr:
+                eigen_corr = '-'.join(['%.2f' % (max(v))
+                                    for v in eig_corr[:4]]).replace('0.', '.')
         if not opts.skip_merge:
             cur.execute("""
             insert into MERGE_OUTPUTs
@@ -311,7 +323,7 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
             (NULL,    %d,        %d,        %d,       %d,       %d,        %d)
             """ % (jobid,    w1path,    w2path,     bed1,     bed2,  outbedid))
 
-        if not opts.skip_comparison:
+        if opts.skip_comparison[0] is not None:
             cur.execute("""
             insert into MERGE_STATs
             (Id  , JOBid, N_columns,   N_filtered, Resolution, reprod, scc, std_scc, decay_corr, eigen_corr, bias1Path, bias2Path)
@@ -366,42 +378,43 @@ def save_to_db(opts, mreads1, mreads2, decay_corr_dat, decay_corr_fig,
             if 'tmpdb' in opts and opts.tmpdb:
                 remove(dbfile2)
 
-        for f in masked1:
-            if f  != 'valid-pairs':
-                outmask = path.join(opts.workdir, '03_filtered_reads',
-                                    'all_r1-r2_intersection_%s.tsv_%s.tsv' % (
-                                        param_hash, f.replace(' ', '_')))
-                out = open(outmask, 'w')
-                try:
-                    fh = magic_open(path.join(opts.workdir1, masked1[f]['path']))
-                except FileNotFoundError:
-                    fh = magic_open(path.join(opts.workdir1, masked1[f]['path'] + '.gz'))
-                except TypeError:
-                    continue
-                for line in fh:
-                    out.write(line)
-                try:
-                    fh = magic_open(path.join(opts.workdir2, masked2[f]['path']))
-                except FileNotFoundError:
-                    fh = magic_open(path.join(opts.workdir2, masked2[f]['path'] + '.gz'))
-                for line in fh:
-                    out.write(line)
-                add_path(cur, outmask, 'FILTER', jobid, opts.workdir)
-            else:
-                if opts.skip_merge:
-                    outmask = 'NA'
+        if not opts.skip_merge:
+            for f in masked1:
+                if f  != 'valid-pairs':
+                    outmask = path.join(opts.workdir, '03_filtered_reads',
+                                        'all_r1-r2_intersection_%s.tsv_%s.tsv' % (
+                                            param_hash, f.replace(' ', '_')))
+                    out = open(outmask, 'w')
+                    try:
+                        fh = magic_open(path.join(opts.workdir1, masked1[f]['path']))
+                    except FileNotFoundError:
+                        fh = magic_open(path.join(opts.workdir1, masked1[f]['path'] + '.gz'))
+                    except TypeError:
+                        continue
+                    for line in fh:
+                        out.write(line)
+                    try:
+                        fh = magic_open(path.join(opts.workdir2, masked2[f]['path']))
+                    except FileNotFoundError:
+                        fh = magic_open(path.join(opts.workdir2, masked2[f]['path'] + '.gz'))
+                    for line in fh:
+                        out.write(line)
+                    add_path(cur, outmask, 'FILTER', jobid, opts.workdir)
                 else:
-                    outmask = outbed
-            try:
-                path_id = get_path_id(cur, outmask, opts.workdir)
-            except IndexError:
-                path_id = -1
-            cur.execute("""
-            insert into FILTER_OUTPUTs
-            (Id  , PATHid, Name, Count, JOBid)
-            values
-            (NULL,     %d, '%s',  '%s',    %d)
-            """ % (path_id, f, masked1[f]['count'] + masked2[f]['count'], jobid))
+                    if opts.skip_merge:
+                        outmask = 'NA'
+                    else:
+                        outmask = outbed
+                try:
+                    path_id = get_path_id(cur, outmask, opts.workdir)
+                except IndexError:
+                    path_id = -1
+                cur.execute("""
+                insert into FILTER_OUTPUTs
+                (Id  , PATHid, Name, Count, JOBid)
+                values
+                (NULL,     %d, '%s',  '%s',    %d)
+                """ % (path_id, f, masked1[f]['count'] + masked2[f]['count'], jobid))
 
         print_db(cur, 'PATHs')
         print_db(cur, 'JOBs')
@@ -566,15 +579,15 @@ def populate_args(parser):
                         and generate the matrices.''')
 
     glopts.add_argument('--skip_comparison', dest='skip_comparison',
-                        action='store_true', default=False,
-                        help='''skip the comparison between replicates (faster).
+                        default=[None], nargs='+', type=int,
+                        help='''[%(default)s] skip the comparison between replicates (faster).
                         Comparisons are performed at 3 levels 1- comparing first
                         diagonals of each experiment (and generating SCC score
                         and standard deviation see
                         https://doi.org/10.1101/gr.220640.117) 2- Comparing the
                         first eigenvectors of input experiments 3- Generates
                         reproducibility score using function from
-                        https://doi.org/10.1093/bioinformatics/btx152''')
+                        https://doi.org/10.1093/bioinformatics/btx152. ''')
 
     glopts.add_argument('--skip_merge', dest='skip_merge',
                         action='store_true', default=False,
@@ -678,7 +691,7 @@ def check_options(opts):
             opts.tmpdb2 = path.join(opts.workdir2, 'trace.db')
 
     # resolution needed to compare
-    if not opts.skip_comparison and not opts.reso:
+    if opts.skip_comparison[0] is not None and not opts.reso:
         raise Exception('ERROR: need to define resolution at which to compare')
 
     # check if job already run using md5 digestion of parameters
