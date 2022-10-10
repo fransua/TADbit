@@ -786,7 +786,7 @@ class HiC_data(dict):
            parameter a path to a BED or BED-Graph file with a list of genes or
            active epigenetic marks can be passed, and used instead of the mean
            interactions.
-        :param 0 smoothing_window: window size for smoothing the chomosomic matrix 
+        :param 0 smoothing_window: window size for smoothing the chromosomic matrix 
            before getting eigenvectors. The smooth is done using median_filter from 
            scipy.ndimage. The parameter is passed as `size` to the median_filter 
            function.
