@@ -651,12 +651,15 @@ def insulation_score(hic_data, dists, normalize=False, resolution=1,
 def insulation_to_borders(ins_score, deltas, min_strength=0.1):
     """
     Best (for human-like genome size) according to https://doi.org/10.1038/nature14450
-    is (at 10kb resolution) to use awindow size of 500 kb (use the function
+    is (at 10kb resolution) to use a window size of 500 kb (use the function
     insulation_score with dist=(1,50)) and a delta of 100 kb (10 bins).
 
 
-    :returns: the position in bin of each border, and the intensity of the
-       border (sigmoid normalized, from 0 to 1)
+    :returns: the position in bin of each border, and the strength of the
+       border, as defined in Crane et al 2015 "The boundary strength was 
+       defined as the difference in the delta vector between the local maximum
+       to the left and local minimum to the right of the boundary bin." 
+       (border strength is sigmoid normalized, from 0 to 1).
     """
     borders = []
     for pos in range(max(ins_score)):
@@ -667,7 +670,7 @@ def insulation_to_borders(ins_score, deltas, min_strength=0.1):
         if not (deltas.get(pos - 1, 100) > 0 and
                 deltas.get(pos + 1, -100) < 0):
             continue
-        # left
+        # find local maximum delta value to the left
         lo = 1
         prev_lv = deltas.get(pos - 1, 100)
         while pos - 1 - lo > 0:
@@ -676,7 +679,7 @@ def insulation_to_borders(ins_score, deltas, min_strength=0.1):
                 break
             prev_lv = lv
             lo += 1
-        # right
+        # find local minimum delta value to the right
         ro = 1
         prev_rv = deltas.get(pos + 1, -100)
         while pos + 1 + ro <= len(deltas):
