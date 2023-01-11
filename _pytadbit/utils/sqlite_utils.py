@@ -295,3 +295,78 @@ def retry(exceptions, tries=4, delay=3, backoff=2, silent=False, logger=None):
         return f_retry  # true decorator
 
     return deco_retry
+
+
+def get_stats(db_path):
+    """
+    parse TADbit database from workdir (expect to have run mapping parsing and
+    filtering steps)
+    
+    :param db_path: path to trace.db file
+    
+    :returns: a dictionary with descriptive statistics
+    """
+    con = lite.connect(db_path)
+    summary = {
+        'input reads': {1: 0, 2: 0}, 
+        'input frags': {1: 0, 2: 0},
+        'mapped reads': {1: {'full': 0, 'frag': 0}, 2: {'full': 0, 'frag': 0}},
+        'parsed reads': {},
+    }
+    multiple_names = {
+        "1": "triple-wise",
+        "2": "quadruple-wise",
+        "3": "quintuple-wise",
+        "4": "sextuple-wise",
+    }
+    with con:
+        cur = con.cursor()
+        read_path = {}
+        for read in [1, 2]:
+            mids = {'full': [], 'frag': []}
+            for mapping in ['full', 'frag']:
+                cur.execute(("SELECT Entries, MAPPED_OUTPUTid FROM MAPPED_INPUTs "
+                             "WHERE Read=%d and Frag='%s'") % (read, mapping))
+                for m, mid in cur.fetchall():
+                    if mapping=='full':
+                        summary['input reads'][read] += m
+                    elif mapping=='frag':
+                        summary['input frags'][read] += m
+                    mids[mapping].append(mid)
+
+            for mapping in ['full', 'frag']:
+                for mid in mids[mapping]:
+                    cur.execute('SELECT Uniquely_mapped, BEDid FROM MAPPED_OUTPUTs where PATHid=%s' % mid)
+                    uniques, bedid = cur.fetchall()[0]  # get BEDid for parsed-outputs table
+                    summary['mapped reads'][read][mapping] += uniques
+                    read_path[read] = bedid
+
+            cur.execute('SELECT Total_uniquely_mapped, Multiples FROM PARSED_OUTPUTs where PATHid=%s' % 
+                        read_path[read])
+
+            uniques, multiples = cur.fetchall()[0]
+            if multiples:
+                multiples = dict((v.split(':')[0], int(v.split(':')[1])) for v in multiples.split(','))
+            else:
+                multiples = {}
+            summary['parsed reads'][read] = {"uniques": uniques, 
+                                             "multiples": {}}
+            for k in multiples:
+                summary['parsed reads'][read]["multiples"][multiple_names[k]] = multiples[k]
+
+
+            tot = sum(summary['mapped reads'][read].values())
+            cur.execute('SELECT Multiples FROM PARSED_OUTPUTs where Total_uniquely_mapped=%s' % tot)
+            m = cur.fetchall()[0][0]
+            # summary[spe][sample]['mapped reads'][read] += m
+        cur.execute('SELECT Total_interactions, Multiple_interactions FROM INTERSECTION_OUTPUTs')
+        count, mult = cur.fetchall()[0]
+        for elt in mult.split():
+            m, c = map(int, elt.split(':'))
+            count += (m + 1) * m / 2 * c - c
+        summary['intersection'] = count
+        cur.execute('SELECT Name, Count, Applied FROM FILTER_OUTPUTs')
+        summary['filters'] = {}
+        for name, num, applied in cur.fetchall():
+            summary['filters'][name] = num, applied
+    return summary
