@@ -841,7 +841,7 @@ class HiC_data(dict):
         count = 0
         richA_stats = dict((sec, None) for sec in self.section_pos)
 
-        for sec in self.section_pos:
+        for sec, (sec_b, sec_e) in self.section_pos.items():
             if crms and sec not in crms:
                 continue
             if kwargs.get('verbose', False):
@@ -850,9 +850,9 @@ class HiC_data(dict):
             try:
                 matrix = [[(float(self[i,j]) / self.expected[sec][abs(j-i)]
                             / self.bias[i] / self.bias[j])
-                        for i in range(*self.section_pos[sec])
+                        for i in range(sec_b, sec_e)
                         if not i in self.bads]
-                        for j in range(*self.section_pos[sec])
+                        for j in range(sec_b, sec_e)
                         if not j in self.bads]
             except KeyError:
                 if sec in self.expected and not self.expected[sec]:
@@ -860,19 +860,21 @@ class HiC_data(dict):
                 else:
                     matrix = [[(float(self[i,j]) / self.expected[abs(j-i)]
                                 / self.bias[i] / self.bias[j])
-                            for i in range(*self.section_pos[sec])
+                            for i in range(sec_b, sec_e)
                             if not i in self.bads]
-                            for j in range(*self.section_pos[sec])
+                            for j in range(sec_b, sec_e)
                             if not j in self.bads]
             if not matrix: # MT chromosome will fall there
                 warn('Chromosome %s is probably MT :)' % (sec))
                 cmprts[sec] = []
                 count += 1
                 continue
+
             # enforce symmetry
-            for i in range(len(matrix)):
-                for j in range(i+1, len(matrix)):
-                    matrix[i][j] = matrix[j][i]
+            for i, row in enumerate(matrix):
+                for j, val in enumerate(row[:i]):
+                    matrix[j][i] = val
+
             # compute correlation coefficient
             try:
                 matrix = [list(m) for m in corrcoef(matrix)]
@@ -888,29 +890,26 @@ class HiC_data(dict):
             if savecorr:
                 out = open(os.path.join(savecorr, '%s_corr-matrix%s.tsv' % (sec, suffix)),
                            'w')
-                start1, end1 = self.section_pos[sec]
-                out.write('# MASKED %s\n' % (' '.join([str(k - start1)
+                out.write('# MASKED %s\n' % (' '.join([str(k - sec_b)
                                                        for k in self.bads
-                                                       if start1 <= k <= end1])))
+                                                       if sec_b <= k <= sec_e])))
                 rownam = ['%s\t%d-%d' % (k[0],
                                          k[1] * self.resolution,
                                          (k[1] + 1) * self.resolution)
                           for k in sorted(self.sections,
                                           key=lambda x: self.sections[x])
                           if k[0] == sec]
-                length = self.section_pos[sec][1] - self.section_pos[sec][0]
+                length = sec_e - sec_b
                 empty = 'NaN\t' * (length - 1) + 'NaN\n'
                 badrows = 0
-                for row, posx in enumerate(range(self.section_pos[sec][0],
-                                                  self.section_pos[sec][1])):
+                for row, posx in enumerate(range(sec_b, sec_e)):
                     if posx in self.bads:
                         out.write(rownam.pop(0) + '\t' + empty)
                         badrows += 1
                         continue
                     vals = []
                     badcols = 0
-                    for col, posy in enumerate(range(self.section_pos[sec][0],
-                                                      self.section_pos[sec][1])):
+                    for col, posy in enumerate(range(sec_b, sec_e)):
                         if posy in self.bads:
                             vals.append('NaN')
                             badcols += 1
@@ -929,7 +928,7 @@ class HiC_data(dict):
                 evals, evect = eigsh(array(matrix),
                                      k=max_ev if max_ev else (len(matrix) - 1))
             except (LinAlgError, ValueError):
-                warn('Chromosome %s too small to compute PC1' % (sec))
+                warn(f'Chromosome {sec} too small to compute PC1')
                 cmprts[sec] = [] # Y chromosome, or so...
                 count += 1
                 continue
