@@ -11,6 +11,7 @@ from random                            import random, shuffle
 from sys                               import stdout
 from pytadbit.boundary_aligner.aligner import align
 
+import pandas as pd
 
 try:
     from scipy.interpolate import interp1d
@@ -566,3 +567,72 @@ def generate_shuffle_tads(tads):
             tad += tads[-1]
         tads.append(tad)
     return tads
+
+
+def align_TAD_borders(left_tads, right_tads, left_suffix='a', right_suffix='b', dist_cut=2):
+    """
+    Align TAD borders, reading them from a pandas dataframe.
+    It uses pandas.merge_asof function to gather the intersection within the 
+    defined distance cutoff, and then adds back unaligned borders.
+    Aligned border are merged into an average position if they do not match perfectly.
+    
+    :param left_tads: pandas dataframe containing TADs 
+       (expected columns: pos_ID1, score_ID1, density_ID1, Chromosome)
+    :param right_tads: pandas dataframe containing TADs 
+       (expected columns: pos_ID2, score_ID2, density_ID2, Chromosome)
+    :param a left_suffix: to label columns after alignment
+    :param b right_suffix: to label columns after alignment
+    :param 2 dist_cut: maximum distance to consider 2 TAD border as homologous
+    
+    :returns: a pandas dataframe with the resulting alignment; the number of left
+       TAD borders aligned; the number of right TAD borders aligned.
+
+    """
+    # convert coordinates to floats
+    left_tads[f"pos_{left_suffix}"] = left_tads[f"pos_{left_suffix}"].astype(float, copy=True)
+    right_tads[f"pos_{right_suffix}"] = right_tads[f"pos_{right_suffix}"].astype(float, copy=True)
+    # store copy
+    pre_a = left_tads
+    pre_b = right_tads
+    # align left with right
+    left_merge = pd.merge_asof(pre_a, pre_b, 
+                               left_on=f"pos_{left_suffix}", right_on=f"pos_{right_suffix}", 
+                               direction='nearest', tolerance=dist_cut, by="Chromosome", suffixes=('', ''))
+    # align right with left
+    right_merge = pd.merge_asof(pre_b, pre_a,
+                                left_on=f"pos_{right_suffix}", right_on=f"pos_{left_suffix}", 
+                                direction='nearest', tolerance=dist_cut, by="Chromosome", suffixes=('', ''))
+    # take intersection of both alignments
+    intersection = pd.merge(left_merge, right_merge, on=list(right_merge.columns), 
+                            how='inner')
+    # average positions to generate consensus
+    tmp_global = np.nanmean([intersection[f"pos_{left_suffix}"],
+                                             intersection[f"pos_{right_suffix}"]], axis=0)
+    ####
+    # add unaligned positions (gaps)
+    missing_left = pd.DataFrame()
+    for row in left_tads.iterrows():
+        row = pd.DataFrame(row[1].to_frame().T)
+        res = pd.merge(row[[f'pos_{left_suffix}', 'Chromosome']], 
+                       intersection[[f'pos_{left_suffix}', 'Chromosome']])
+        if not len(res):
+            missing_left = missing_left.append(row)
+
+    missing_right = pd.DataFrame()
+    for row in right_tads.iterrows():
+        row = pd.DataFrame(row[1].to_frame().T)
+        res = pd.merge(row[[f'pos_{right_suffix}', 'Chromosome']], 
+                       intersection[[f'pos_{right_suffix}', 'Chromosome']])
+        if not len(res):
+            missing_right = missing_right.append(row)
+    missing_right["pos_global"] = missing_right[f"pos_{right_suffix}"]
+    
+    intersection["pos_global"] = tmp_global
+
+    intersection = intersection.append(missing_left)
+    intersection = intersection.append(missing_right)
+    intersection.sort_values(by=f"pos_{left_suffix}", inplace=True)
+    intersection.reset_index(inplace=True, drop=True)
+    
+    return intersection, len(left_merge), len(right_merge)
+
