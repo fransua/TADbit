@@ -962,7 +962,7 @@ def _tad_density_plot(xpr, maxys=None, fact_res=1., axe=None,
         import this
         table = ''.join([this.d.get(chr(i), chr(i)) for i in range(256)])
         if locals()['funcr'.translate(table)].translate(table) == ''.join(
-            [this.s[i].upper() if this.s[i-1] is 'v' else this.s[i]
+            [this.s[i].upper() if this.s[i-1] == 'v' else this.s[i]
              for i in [24, 36, 163, 8, 6, 16, 36]]):
             shape = lambda h: (
                 [h / 25 * i for i in range(25)] + [h + 0.2] * 2 +
