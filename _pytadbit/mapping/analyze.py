@@ -1655,14 +1655,14 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
                       alpha=0.7, label=names[d])
 
         axRp.spines['left'].set_visible(False)
-        axRp.set_xlim(0, full_len // full_step - 2000 // full_step)
-        axRp.set_xticks(list(range((10000 - half_step) // full_step, (full_len + full_step) // full_step, 20)))
-        axRp.set_xticklabels([int(i) for i in range(10000, full_len + full_step, full_step * 20)])
+        axRp.set_xticks(list(range(0, (full_len - half_len) // full_step + 1, 20)))
+        axRp.set_xticklabels([int(i) for i in range(half_len, full_len + full_step, full_step * 20)])
         plt.setp(axRp.get_xticklabels(), visible=False)
         axRp.legend(title='Strand on which each read-end is mapped\n(first read-end is always smaller than second)')
         axRp.yaxis.tick_right()
         axRp.tick_params(labelleft=False)
         axRp.tick_params(labelright=False)
+        axRp.set_xlim(0, full_len / full_step - half_len / full_step)
         axRp.grid()
 
         axRb.bar(list(range(0, full_len // full_step - half_len // full_step + 1)),
