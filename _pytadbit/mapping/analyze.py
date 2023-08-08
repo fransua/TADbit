@@ -1650,7 +1650,7 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
 
     if full_step:
         for d in range(4):
-            axRp.plot([sum(dirs[d][i:i + full_step]) // full_step
+            axRp.plot([sum(dirs[d][i:i + full_step]) / full_step
                        for i in range(half_len, full_len + full_step, full_step)],
                       alpha=0.7, label=names[d])
 
