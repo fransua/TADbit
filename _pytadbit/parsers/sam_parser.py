@@ -78,7 +78,7 @@ def parse_sam(f_names1, f_names2=None, out_file1=None, out_file2=None,
     windows = {}
     multis  = {}
     procs   = []
-    for read in range(len(fnames)):
+    for read, these_fnames in enumerate(fnames):
         if verbose:
             print('Loading read' + str(read + 1))
         windows[read] = {}
@@ -87,7 +87,7 @@ def parse_sam(f_names1, f_names2=None, out_file1=None, out_file2=None,
         nfile = 0
         tmp_files = []
         reads     = []
-        for fnam in fnames[read]:
+        for fnam in these_fnames:
             try:
                 fhandler = Samfile(fnam)
             except IOError:

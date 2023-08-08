@@ -153,7 +153,7 @@ def get_intersection(fname1, fname2, out_path, verbose=False, compress=False):
 
     :returns: final number of pair of interacting fragments, and a dictionary with
        the number of multiple contacts (keys of the dictionary being the number of
-       fragment cought together, can be 3, 4, 5..)
+       fragment caught together, can be 3, 4, 5..)
     """
 
     # Get the headers of the two files
@@ -175,7 +175,7 @@ def get_intersection(fname1, fname2, out_path, verbose=False, compress=False):
         line2 = next(reads2)
     read2 = line2.split('\t', 1)[0]
     if header1 != header2:
-        raise Exception('seems to be mapped onover different chromosomes\n')
+        raise Exception('seems to be mapped on different chromosomes\n')
 
     # prepare to write read pairs into different files
     # depending on genomic position

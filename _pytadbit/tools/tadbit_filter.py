@@ -64,7 +64,7 @@ def run(opts):
         hist_path = path.join(opts.workdir,
                               'histogram_fragment_sizes_%s.pdf' % param_hash)
         try:
-            median, max_f, mad = fragment_size(reads, nreads=1000000, 
+            median, max_f, mad = fragment_size(reads, nreads=1000000,
             stats=('median', 'first_decay', 'MAD'),
                 savefig=hist_path)
         except ZeroDivisionError:
