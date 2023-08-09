@@ -8,7 +8,6 @@ from itertools import combinations
 from bisect import bisect_right as bisect
 from pysam import Samfile
 from pytadbit.mapping.restriction_enzymes import map_re_sites
-from shutil import copyfileobj
 from warnings import warn
 import os
 from sys import stdout
@@ -115,7 +114,7 @@ def parse_sam(f_names1, f_names2=None, out_file1=None, out_file2=None,
                 warn('WARNING: unrecognized mapper used to generate file\n')
                 condition = lambda x: x[1][1] != 1
             if verbose:
-                print('loading SAM file from %s: %s' % (mapper, fnam))
+                print(f'loading {mapper}-SAM file from {fnam}')
             # getrname chromosome names
             i = 0
             crm_dict = {}
