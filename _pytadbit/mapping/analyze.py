@@ -791,7 +791,7 @@ def fragment_size(fnam, savefig=None, nreads=None, max_size=99.9, axe=None,
 
 
 def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
-                              ylim=None, yscale=None, savefig=None, show=False,
+                              ymax=None, ypercmax=100, yscale=None, savefig=None, show=False,
                               savedata=None, chr_names=None, nreads=None):
     """
     Plot the number of reads in bins along the genome (or along a given
@@ -801,7 +801,8 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
     :param True first_read: uses first read.
     :param 100 resolution: group reads that are closer than this resolution
        parameter
-    :param None ylim: a tuple of lower and upper bound for the y axis
+    :param None ymax: upper bound for the y axis
+    :param None ypercmax: upper bound for the y axis in percentile of values
     :param None yscale: if set_bad to "log" values will be represented in log2
        scale
     :param None savefig: path to a file where to save the image generated;
@@ -815,6 +816,8 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
     """
     if first_read:
         warn('WARNING: first_read parameter should no loonger be used.')
+    if ymax is not None and ypercmax is not None:
+        raise Exception('ERROR: shoud define only ymax or ypercmax, not both')
     distr = {}
     genome_seq = OrderedDict()
     if chr_names:
@@ -864,7 +867,9 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
         fig = plt.figure(figsize=(12, 1 + 0.4 * len(
             chr_names if chr_names else list(distr.keys()))), facecolor='w')
 
-    max_y = max([max(distr[c].values()) for c in distr])
+    max_y = np.nanpercentile([v for c in distr for v in distr[c].values()], ypercmax)
+    if ymax is None:
+        ylim = 0, max_y
     max_x = max([len(list(distr[c].values())) for c in distr])
     ncrms = len(chr_names if chr_names else genome_seq if genome_seq else distr)
     data = {}
@@ -893,10 +898,16 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
         if savefig or show:
             plt.xlim((0, max_x))
             plt.ylim(ylim or (0, max_y))
-    yb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.2
-    ybb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.35
-    ybbb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.45
-    ybbbb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.55
+    if yscale == 'log':
+        yb = ylim[0]
+        ybb = ylim[0]
+        ybbb = ylim[0]
+        ybbbb = ylim[0]
+    else:
+        yb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.2
+        ybb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.35
+        ybbb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.45
+        ybbbb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.55
     axe.plot([0, max_x], [yb, yb], ls='-', color='k', clip_on=False)
     for pos, h in enumerate(range(0, max_x, 10_000_000 // resolution)):
         axe.plot([h, h], [yb, ybb if pos % 5 else ybbb], ls='-', color='k', 
