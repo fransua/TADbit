@@ -861,8 +861,8 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
         break
     fhandler.close()
     if savefig or show:
-        _ = plt.figure(figsize=(15, 1 + 3 * len(
-            chr_names if chr_names else list(distr.keys()))))
+        fig = plt.figure(figsize=(12, 1 + 0.4 * len(
+            chr_names if chr_names else list(distr.keys()))), facecolor='w')
 
     max_y = max([max(distr[c].values()) for c in distr])
     max_x = max([len(list(distr[c].values())) for c in distr])
@@ -875,22 +875,43 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
             data[crm] = [distr[crm].get(j, 0)
                          for j in range(genome_seq[crm] // resolution + 1)]
             if savefig or show:
-                plt.subplot(ncrms, 1, i + 1)
-                plt.plot(list(range(genome_seq[crm] // resolution + 1)), data[crm],
-                         color='red', lw=1.5, alpha=0.7)
+                axe = plt.subplot(ncrms, 1, i + 1)
+                axe.fill_between(list(range(genome_seq[crm] // resolution + 1)), data[crm],
+                         color='tab:red', lw=1.5, alpha=0.7)
+                plt.axis('off')
+                # horizontal grid
+                for p in [ylim[0], (ylim[1] + ylim[0]) / 2, ylim[1]]:
+                    axe.plot([0, genome_seq[crm] / resolution], [p, p], color='k', ls='-', lw=1, alpha=0.3)
+                for pos, h in enumerate(range(0, genome_seq[crm] // resolution, 10_000_000 // resolution)):
+                    axe.axvline(h, color='tab:grey', alpha=0.4  if pos % 5 else 0.6, lw=1 if pos % 5 else 2)
+                axe.text(- genome_seq[crm] / (resolution * 500), (ylim[1] + ylim[0]) / 2, crm, 
+                         rotation=0, ha='right', va='center', size=12)
                 if yscale:
                     plt.yscale(yscale)
         except KeyError:
             pass
         if savefig or show:
-            if ylim:
-                plt.vlines(genome_seq[crm] // resolution, ylim[0], ylim[1])
-            else:
-                plt.vlines(genome_seq[crm] // resolution, 0, max_y)
             plt.xlim((0, max_x))
             plt.ylim(ylim or (0, max_y))
-            plt.title(crm)
-
+    yb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.2
+    ybb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.35
+    ybbb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.45
+    ybbbb = ylim[0] - abs(ylim[1] - ylim[0]) * 0.55
+    axe.plot([0, max_x], [yb, yb], ls='-', color='k', clip_on=False)
+    for pos, h in enumerate(range(0, max_x, 10_000_000 // resolution)):
+        axe.plot([h, h], [yb, ybb if pos % 5 else ybbb], ls='-', color='k', 
+                 lw=1  if pos % 5 else 2, clip_on=False)
+        if not pos % 5:
+            axe.text(h, ybbbb, f"{h * resolution // 1_000_000}Mb", va='top', ha='center')
+    if savefig or show:
+        tax = fig.add_axes([0.58, 0.25, 0.32, 0.12])
+        tax.text(0, 9, f"Resolution (binning): {resolution:,} nts", size=12)
+        tax.text(0, 7, f"Y range (counts per bin): {ylim[0]:,} - {ylim[1]:,}", size=12)
+        tax.text(0, 5, f"Number of reads{' (all)' if nreads is None else ''}: {count:,}",
+                 size=12)
+        tax.axis('off')
+        tax.set_xlim(0, 10)
+        tax.set_ylim(0, 10)
     if savefig:
         tadbit_savefig(savefig)
         if not show:
@@ -906,7 +927,6 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
                             for c in data for i, v in enumerate(data[c])))
         out.write('\n')
         out.close()
-
 
 def _unitize(vals):
     return np.argsort(vals) / float(len(vals))
