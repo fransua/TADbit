@@ -775,7 +775,7 @@ def fragment_size(fnam, savefig=None, nreads=None, max_size=99.9, axe=None,
     ax.set_xlabel('Genomic distance between reads')
     ax.set_ylabel('Count')
     ax.set_title('Distribution of dangling-ends ' +
-                 'lenghts\nmedian: %s (mean: %s), top %.1f%%: %0.f nts' % (
+                 'lengths\nmedian: %s (mean: %s), top %.1f%%: %0.f nts' % (
                      int(perc50), int(meanfr), max_size, int(max_perc)))
     if xlog:
         ax.set_xscale('log')
