@@ -917,7 +917,7 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
     if savefig or show:
         tax = fig.add_axes([0.58, 0.25, 0.32, 0.12])
         tax.text(0, 9, f"Resolution (binning): {resolution:,} nts", size=12)
-        tax.text(0, 7, f"Y range (counts per bin): {ylim[0]:,} - {ylim[1]:,}", size=12)
+        tax.text(0, 7, f"Y range (counts per bin): {int(ylim[0]):,} - {int(ylim[1]):,}", size=12)
         tax.text(0, 5, f"Number of reads{' (all)' if nreads is None else ''}: {count:,}",
                  size=12)
         tax.axis('off')
