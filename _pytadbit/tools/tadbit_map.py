@@ -103,7 +103,7 @@ def run(opts):
                                 frag_map=not opts.iterative, clean=not opts.keep_tmp,
                                 windows=opts.windows, get_nread=True, skip=opts.skip,
                                 suffix=param_hash, mapper_binary=opts.mapper_binary,
-                                mapper_params=opts.mapper_param)
+                                mapper_params=opts.mapper_param, end_repair=opts.end_repair)
 
     # adjust line count
     if opts.skip:
@@ -500,6 +500,10 @@ def populate_args(parser):
                         help='''restriction enzyme name(s). Use "--renz CHECK"
                         to search for most probable and exit; and use
                         "--renz NONE" to avoid using RE site information.''')
+
+    glopts.add_argument('--end_repair', action='store_true', help='''in 3C like 
+                        experiments or DipC no end-repair is performed and ligation 
+                        site are thus single restriction cut-sites.''')
 
     glopts.add_argument('--chr_name', dest='chr_name', metavar="STR", nargs='+',
                         default=[], type=str,

@@ -21,14 +21,10 @@ from pytadbit.mapping.restriction_enzymes import RESTRICTION_ENZYMES
 from pytadbit.mapping.restriction_enzymes import map_re_sites
 from pytadbit.mapping.restriction_enzymes import iupac2regex
 
-try:
-    basestring
-except NameError:
-    basestring = str
 
 def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
                     min_seq_len=15, fastq=True, verbose=True,
-                    light_storage=False, **kwargs):
+                    light_storage=False, end_repair=False, **kwargs):
     """
     Given a FASTQ file it can split it into chunks of a given number of reads,
     trim each read according to a start/end positions or split them into
@@ -36,6 +32,8 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
 
     :param True add_site: when splitting the sequence by ligated sites found,
        removes the ligation site, and put back the original RE site.
+    :param False end_repair: in 3C like experiments or DipC no end-repair is 
+       performed and ligation site are thus single restriction cut-sites.
 
     """
     skip = kwargs.get('skip', False)
@@ -124,7 +122,7 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
             if len(seq) == max_seq_len:
                 raise ValueError
             if len(seq) > min_seq_len:
-                yield seq, qal, cnt
+                yield seq.upper(), qal, cnt
             return
         # add quality before corresponding to the space occupied by the cut-site
         xqal1 = ('H' * len(site[r_enz1]))
@@ -134,12 +132,12 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
                        xqal2        + qal[pos + len_relgs[(r_enz1, r_enz2)]:],
                        patterns, no_site, max_seq_len, cnt=cnt)
         else:
-            yield seq[:pos] + site[r_enz1], qal[:pos] + xqal1, cnt
+            yield (seq[:pos] + site[r_enz1]).upper(), qal[:pos] + xqal1, cnt
         new_pos = pos + len_relgs[(r_enz1, r_enz2)]
         for sseq, sqal, cnt in split_read(site[r_enz2] + seq[new_pos:],
                                           xqal2 + qal[new_pos:], patterns,
                                           site, max_seq_len, cnt=cnt):
-            yield sseq, sqal, cnt
+            yield sseq.upper(), sqal, cnt
 
     # Define function for stripping lines according to focus
     if isinstance(trim, tuple):
@@ -150,7 +148,7 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
         strip_line = lambda x: x
 
     # define function to split reads according to restriction enzyme sites
-    if isinstance(r_enz, basestring):
+    if isinstance(r_enz, str):
         r_enzs = [r_enz]
     elif isinstance(r_enz, list):
         r_enzs = r_enz
@@ -161,7 +159,14 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
         enzymes = {}
         enz_patterns = {}
         for r_enz in r_enzs:
-            enzymes[r_enz] = RESTRICTION_ENZYMES[r_enz].replace('|', '')
+            # we put in in lower case in order to escape in order to avoid being recursively
+            #  detected in case cut site and ligation site is the same
+            enzymes[r_enz] = RESTRICTION_ENZYMES[r_enz].replace('|', '').lower()
+        # when no end-repair was perform we only search for the single restriction cut site
+        if end_repair:
+            enz_patterns = religateds(r_enzs)
+        else:
+            enz_patterns[r_enzs[0], r_enzs[0]] = enzymes[r_enzs[0]].upper()
         enz_patterns = religateds(r_enzs)
         sub_enz_patterns = {}
         len_relgs = {}
@@ -325,7 +330,7 @@ def _gem_filter(fnam, unmap_out, map_out):
        - GEM unique-maps can not be used as it gets rid of reads like 1:0:0:5
        - not feasible with gt.filter
     """
-    fhandler = magic_open(fnam) if isinstance(fnam, basestring) else fnam
+    fhandler = magic_open(fnam) if isinstance(fnam, str) else fnam
     unmap_out = open(unmap_out, 'w')
     map_out   = open(map_out  , 'w')
     def _strip_read_name(line):
@@ -488,7 +493,7 @@ def _gem_mapping(gem_index_path, fastq_path, out_map_path, fastq_path2 = None,
                 raise Exception('ERROR: need enzyme name to fragment.')
             print('Using GEM', gem_version, 'with 3c mapping')
             gem_cmd += ['--i1', fastq_path, '--i2', fastq_path2, '--3c']
-            if isinstance(r_enz, basestring):
+            if isinstance(r_enz, str):
                 gem_cmd += ['--restriction-enzyme', r_enz]
             elif isinstance(r_enz, list):
                 for r_z in r_enz:
@@ -517,7 +522,7 @@ def _gem_mapping(gem_index_path, fastq_path, out_map_path, fastq_path2 = None,
 def full_mapping(mapper_index_path, fastq_path, out_map_dir, mapper='gem',
                  r_enz=None, frag_map=True, min_seq_len=15, windows=None,
                  add_site=True, clean=False, get_nread=False,
-                 mapper_binary=None, mapper_params=None, **kwargs):
+                 mapper_binary=None, mapper_params=None, end_repair=True, **kwargs):
     """
     Maps FASTQ reads to an indexed reference genome. Mapping can be done either
     without knowledge of the restriction enzyme used, or for experiments
@@ -556,6 +561,8 @@ def full_mapping(mapper_index_path, fastq_path, out_map_dir, mapper='gem',
        a path and the number of reads processed
     :param gem-mapper mapper_binary: path to the binary mapper
     :param None mapper_params: extra parameters for the mapper
+    :param False end_repair: in 3C like experiments or DipC no end-repair is 
+       performed and ligation site are thus single restriction cut-sites.
 
     :returns: a list of paths to generated outfiles. To be passed to
        :func:`pytadbit.parsers.map_parser.parse_map`
@@ -625,7 +632,7 @@ def full_mapping(mapper_index_path, fastq_path, out_map_dir, mapper='gem',
             input_reads, mkstemp(prefix=base_name + '_', dir=temp_dir)[1],
             fastq=is_fastq(input_reads),
             min_seq_len=min_seq_len, trim=win, skip=skip, nthreads=nthreads,
-            light_storage=light_storage)
+            light_storage=light_storage, end_repair=end_repair)
         # clean
         if input_reads != fastq_path and clean:
             print('   x removing original input %s' % input_reads)
