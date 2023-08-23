@@ -24,7 +24,7 @@ from pytadbit.mapping.restriction_enzymes import iupac2regex
 
 def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
                     min_seq_len=15, fastq=True, verbose=True,
-                    light_storage=False, end_repair=False, **kwargs):
+                    light_storage=False, end_repair=True, **kwargs):
     """
     Given a FASTQ file it can split it into chunks of a given number of reads,
     trim each read according to a start/end positions or split them into
@@ -32,7 +32,7 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
 
     :param True add_site: when splitting the sequence by ligated sites found,
        removes the ligation site, and put back the original RE site.
-    :param False end_repair: in 3C like experiments or DipC no end-repair is 
+    :param True end_repair: in 3C like experiments or DipC no end-repair is 
        performed and ligation site are thus single restriction cut-sites.
 
     """
@@ -167,7 +167,6 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
             enz_patterns = religateds(r_enzs)
         else:
             enz_patterns[r_enzs[0], r_enzs[0]] = enzymes[r_enzs[0]].upper()
-        enz_patterns = religateds(r_enzs)
         sub_enz_patterns = {}
         len_relgs = {}
         for r_enz1, r_enz2 in enz_patterns:
@@ -700,7 +699,7 @@ def full_mapping(mapper_index_path, fastq_path, out_map_dir, mapper='gem',
             input_reads, mkstemp(prefix=base_name + '_', dir=temp_dir)[1],
             min_seq_len=min_seq_len, trim=win, fastq=False, r_enz=r_enz,
             add_site=add_site, skip=skip, nthreads=nthreads,
-            light_storage=light_storage)
+            light_storage=light_storage, end_repair=end_repair)
         # clean
         if clean:
             print('   x removing pre-%s input %s' % (mapper.upper(),input_reads))
