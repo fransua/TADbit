@@ -688,7 +688,7 @@ def plot_iterative_mapping(fnam1, fnam2, total_reads=None, axe=None, savefig=Non
 
 def fragment_size(fnam, savefig=None, nreads=None, max_size=99.9, axe=None,
                  show=False, xlog=False, stats=('median', 'perc_max'),
-                 too_large=10000):
+                 too_large=10_000):
     """
     Plots the distribution of dangling-ends lengths
     :param fnam: input file name
@@ -864,7 +864,7 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
         break
     fhandler.close()
     if savefig or show:
-        fig = plt.figure(figsize=(12, 1 + 0.4 * len(
+        fig = plt.figure(figsize=(12, 2 + 0.4 * len(
             chr_names if chr_names else list(distr.keys()))), facecolor='w')
 
     max_y = np.nanpercentile([v for c in distr for v in distr[c].values()], ypercmax)
@@ -915,19 +915,17 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
         if not pos % 5:
             axe.text(h, ybbbb, f"{h * resolution // 1_000_000}Mb", va='top', ha='center')
     if savefig or show:
-        tax = fig.add_axes([0.58, 0.25, 0.32, 0.12])
-        tax.text(0, 9, f"Resolution (binning): {resolution:,} nts", size=12)
-        tax.text(0, 7, f"Y range (counts per bin): {int(ylim[0]):,} - {int(ylim[1]):,}", size=12)
-        tax.text(0, 5, f"Number of reads{' (all)' if nreads is None else ''}: {count:,}",
-                 size=12)
-        tax.axis('off')
-        tax.set_xlim(0, 10)
-        tax.set_ylim(0, 10)
+        plt.suptitle(
+            f"""Resolution (binning): {resolution:,} nts
+Y range (counts per bin): {int(ylim[0]):,} - {int(ylim[1]):,}
+Number of reads{' (all)' if nreads is None else ''}: {count:,}""", size=12, ha="left")
     if savefig:
+        plt.tight_layout()
         tadbit_savefig(savefig)
         if not show:
             plt.close('all')
     elif show:
+        plt.tight_layout()
         plt.show()
 
     if savedata:
@@ -1701,7 +1699,7 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
                   for i in range(half_len, full_len + full_step, full_step)],
                  alpha=0.5, color='k')
 
-        axRb.set_ylim(0, max(sum_dirs) * 1.1)
+        axRb.set_ylim(0.01, max(sum_dirs) * 1.1)
 
         axRb.spines['left'].set_visible(False)
         axRb.yaxis.tick_right()
@@ -1749,7 +1747,7 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
 # For back compatibility
 def insert_sizes(fnam, savefig=None, nreads=None, max_size=99.9, axe=None,
                  show=False, xlog=False, stats=('median', 'perc_max'),
-                 too_large=10000):
+                 too_large=10_000):
     """
     Deprecated function, use fragment_size
     """

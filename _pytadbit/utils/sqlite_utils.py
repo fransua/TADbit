@@ -318,6 +318,10 @@ def get_stats(db_path):
         "2": "quadruple-wise",
         "3": "quintuple-wise",
         "4": "sextuple-wise",
+        "5": "septuple-wise",
+        "6": "octuple-wise",
+        "7": "nonuple-wise",
+        "8": "decuple-wise",
     }
     with con:
         cur = con.cursor()
