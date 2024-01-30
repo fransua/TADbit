@@ -438,7 +438,6 @@ def load_parameters_fromdb(workdir, jobid, opts, tmpdb):
         dbfile = tmpdb
     else:
         dbfile = path.join(workdir, 'trace.db')
-    print(dbfile)
     con = lite.connect(dbfile)
     with con:
         cur = con.cursor()

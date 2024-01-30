@@ -864,7 +864,7 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
         break
     fhandler.close()
     if savefig or show:
-        fig = plt.figure(figsize=(12, 2 + 0.4 * len(
+        fig = plt.figure(figsize=(8, 1.5 + 0.3 * len(
             chr_names if chr_names else list(distr.keys()))), facecolor='w')
 
     max_y = np.nanpercentile([v for c in distr for v in distr[c].values()], ypercmax)
@@ -918,7 +918,8 @@ def plot_genomic_distribution(fnam, first_read=None, resolution=10000,
         plt.suptitle(
             f"""Resolution (binning): {resolution:,} nts
 Y range (counts per bin): {int(ylim[0]):,} - {int(ylim[1]):,}
-Number of reads{' (all)' if nreads is None else ''}: {count:,}""", size=12, ha="left")
+Number of reads{' (all)' if nreads is None else ''}: {count:,}""", 
+                    size=12, ha="left", y=0.3, x=0.5)
     if savefig:
         plt.tight_layout()
         tadbit_savefig(savefig)
@@ -926,7 +927,7 @@ Number of reads{' (all)' if nreads is None else ''}: {count:,}""", size=12, ha="
             plt.close('all')
     elif show:
         plt.tight_layout()
-        plt.show()
+        # plt.show()
 
     if savedata:
         out = open(savedata, 'w')
@@ -1739,9 +1740,6 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
 
     if savefig:
         tadbit_savefig(savefig)
-    else:
-        plt.show()
-
 
 
 # For back compatibility
