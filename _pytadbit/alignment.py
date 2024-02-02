@@ -486,7 +486,7 @@ def randomization_test(xpers, score=None, num=1000, verbose=False, max_dist=1000
                      xpr.resolution for t in list(xpr.tads.values())])
     rnd_distr = []
     # rnd_len = []
-    distr = _interpolation(xpers) if rnd_method is 'interpolate' else None
+    distr = _interpolation(xpers) if rnd_method == 'interpolate' else None
     rnd_exp = lambda : tads[int(random() * len(tads))]
     for val in range(num):
         if verbose:
@@ -496,7 +496,7 @@ def randomization_test(xpers, score=None, num=1000, verbose=False, max_dist=1000
                              ' randomizing: '
                              '%.2f completed' % (100 * val/num))
                 stdout.flush()
-        if rnd_method is 'interpolate':
+        if rnd_method == 'interpolate':
             rnd_tads = [generate_rnd_tads(r_size, distr)
                         for _ in range(len(tads))]
             # rnd_len.append(float(sum([len(r) for r in rnd_tads]))
