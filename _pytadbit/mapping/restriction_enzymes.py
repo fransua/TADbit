@@ -9,7 +9,11 @@ from re import compile
 from warnings import warn
 
 from collections import OrderedDict
-from scipy.stats import binom_test
+
+try:
+    from scipy.stats import binomtest
+except ImportError:
+    from scipy.stats import binom_test  as binomtest# oder scipy versions
 
 from pytadbit.utils.file_handling import magic_open
 
@@ -268,7 +272,7 @@ def identify_re(fnam, nreads=100000):
 
     bestks = []
     best_pv = 1
-    for pv, k in sorted((binom_test(pats[k]['count'], nreads, 0.25**len(k), alternative='greater'), k)
+    for pv, k in sorted((binomtest(pats[k]['count'], nreads, 0.25**len(k), alternative='greater'), k)
                         for k in pats if pats[k]['count'])[:20]:        
         if pv <= best_pv or pv < 1e-100:
             if pv <= best_pv:
