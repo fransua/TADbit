@@ -265,13 +265,13 @@ def insert_mark_heavy(header, num):
     if num == 1 :
         return header
     h, s, q = header.rsplit(' ', 2)
-    return '%s~%d~ %s %s' % (h, num, s, q)
+    return f'{h}~{num}~ {s} {q}'
 
 
 def insert_mark_light(header, num):
     if num == 1 :
         return header
-    return '%s~%d~' % (header, num)
+    return f'{header}~{num}~'
 
 
 def _map2fastq(read):
@@ -381,8 +381,8 @@ def _bowtie2_mapping(bowtie2_index_path, fastq_path1, out_map_path, fastq_path2 
     print('TO %s'%bowtie2_binary, fastq_path1, fastq_path2)
     bowtie2_cmd = [
         bowtie2_binary, '-x', bowtie2_index_path,
-        '-p', str(nthreads), '--reorder','-k','1','-S',
-        out_map_path]
+        '-p', str(nthreads), '--reorder','-k','1'# ,'-S',
+    ] #out_map_path]
 
     if paired_map:
         bowtie2_cmd += ['-1',fastq_path1,'-2',fastq_path2]
@@ -402,8 +402,11 @@ def _bowtie2_mapping(bowtie2_index_path, fastq_path1, out_map_path, fastq_path2 
     print(' '.join(bowtie2_cmd))
     try:
         # check_call(gem_cmd, stdout=PIPE, stderr=PIPE)
-        out, err = Popen(bowtie2_cmd, stdout=PIPE, stderr=PIPE,
-                         universal_newlines=True).communicate()
+        # out, err = Popen(bowtie2_cmd, stdout=PIPE, stderr=PIPE,
+        #                  universal_newlines=True).communicate()
+        out, err = Popen(' '.join(bowtie2_cmd) + f' | samtools view -h -F 256 -@ {nthreads} -o {out_map_path}', 
+                         stdout=PIPE, stderr=PIPE,
+                         shell=True, universal_newlines=True).communicate()
     except CalledProcessError as e:
         print(out)
         print(err)
@@ -466,7 +469,7 @@ def _gem_mapping(gem_index_path, fastq_path, out_map_path, fastq_path2 = None,
 
         # check kwargs
         for kw in kwargs:
-            if not kw in ['nthreads', 'max_edit_distance',
+            if kw not in ['nthreads', 'max_edit_distance',
                           'mismatches', 'max_reads_per_chunk',
                           'out_files', 'temp_dir', 'skip', 'q', 'm', 's',
                           'strata-after-best', 'allow-incomplete-strata',
