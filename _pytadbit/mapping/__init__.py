@@ -218,7 +218,7 @@ def get_intersection(fname1, fname2, out_path, verbose=False, compress=False):
                     stdout.flush()
                 count_dots += 1
             for _ in range(1000000): # iterate 1 million times, write to files
-                # same read id in both lianes, we store put the more upstream
+                # same read id in both lanes, we store put the more upstream
                 # before and store them
                 if eq_reads(read1, read2):
                     count += 1

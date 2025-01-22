@@ -111,7 +111,7 @@ def parse_sam(f_names1, f_names2=None, out_file1=None, out_file2=None,
             elif mapper.lower() == 'gem3':
                 condition = lambda x: False
             else:
-                warn('WARNING: unrecognized mapper used to generate file\n')
+                warn(f'WARNING: "{mapper}" unrecognized mapper used to generate file\n')
                 condition = lambda x: x[1][1] != 1
             if verbose:
                 print(f'loading {mapper}-SAM file from {fnam}')
@@ -131,7 +131,7 @@ def parse_sam(f_names1, f_names2=None, out_file1=None, out_file2=None,
                     continue
                 if condition(r.tags):
                     continue
-                positive = not r.is_reverse
+                positive = int(not r.is_reverse)
                 crm      = crm_dict[r.tid]
                 len_seq  = len(r.seq)
                 if positive:
@@ -160,8 +160,7 @@ def parse_sam(f_names1, f_names2=None, out_file1=None, out_file2=None,
                     next_re    = frag_piece[idx]
                 prev_re    = frag_piece[idx - 1 if idx else 0]
                 name       = r.qname
-                reads.append('%s\t%s\t%d\t%d\t%d\t%d\t%d\n' % (
-                    name, crm, pos, positive, len_seq, prev_re, next_re))
+                reads.append(f'{name}\t{crm}\t{pos}\t{positive}\t{len_seq}\t{prev_re}\t{next_re}\n')
                 windows[read][num] += 1
                 sub_count += 1
                 if sub_count >= max_size:
@@ -221,7 +220,7 @@ def parse_sam(f_names1, f_names2=None, out_file1=None, out_file2=None,
             head = read_line.split('\t', 1)[0]
             head = head.split('~' , 1)[0]
             if head == prev_head:
-                prev_read =  prev_read.strip() + '|||' + read_line
+                prev_read =  f'{prev_read.strip()}|||{read_line}'
                 multi += 1
             else:
                 reads_fh.write(prev_read)

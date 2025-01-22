@@ -86,7 +86,7 @@ def run(opts):
         print('  - median absolution of insert size =', mad)
         print('  - max insert size (when a gap in continuity of > 10 bp is found in fragment lengths) =', max_f)
 
-        max_mole = max_f # pseudo DEs
+        max_mole = max_f # extra DEs
         min_dist = max_f + mad # random breaks
         print('   Using the maximum continuous fragment size'
                '(%d bp) to check '
@@ -473,7 +473,8 @@ def populate_args(parser):
     filter_.add_argument('--re_proximity', dest='re_proximity', metavar="NUM",
                          action='store', default=5, type=int,
                          help ='''[%(default)s] to exclude read-ends falling too
-                         close from RE site (pseudo-dangling-ends)''')
+                         close from RE site (semi-dangling-ends, fragments with 
+                         unligated end)''')
 
     filter_.add_argument('--mad', dest='mad', metavar="NUM",
                          action='store', default=0, type=int,
@@ -481,7 +482,8 @@ def populate_args(parser):
 
     filter_.add_argument('--max_f', dest='max_f', metavar="NUM",
                          action='store', default=0, type=int,
-                         help ='''Maximum fragment length normally computed from observed distribution''')
+                         help ='''Maximum fragment length normally computed from observed distribution.
+                         Affects extra-dangling ends.''')
 
     filter_.add_argument('--median', dest='median', metavar="NUM",
                          action='store', default=0, type=int,

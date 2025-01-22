@@ -58,9 +58,9 @@ def quality_plot(fnam, r_enz=None, nreads=float('inf'), axe=None, savefig=None, 
                 r_enz[i] = k
     # else let it as None
 
-    quals = []
-    henes = []
-    sites = {}
+    quals = []  # sequence quality by position
+    henes = []  # number (and position) of Ns in the sequences
+    sites = {}  # number (and position) of undigested restriction
     fixes = {}
     liges = OrderedDict()
     ligep = {}
