@@ -735,7 +735,9 @@ def fragment_size(fnam, savefig=None, nreads=None, max_size=99.9, axe=None,
     des = [i for i in des if i <= too_large]
     fhandler.close()
     if not des:
-        raise Exception('ERROR: no dangling-ends found in %s' % (fnam))
+        warn('ERROR: no dangling-ends found in %s' % (fnam))
+        return [float('nan') for _ in stats]
+
     max_perc = np.percentile(des, max_size)
     perc99   = np.percentile(des, 99)
     perc01   = np.percentile(des, 1)

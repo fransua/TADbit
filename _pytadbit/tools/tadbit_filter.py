@@ -390,7 +390,12 @@ def load_parameters_fromdb(opts):
                     fname1 += '.gz'
                     fname2 += '.gz'
                 else:
-                    raise IOError('ERROR: unput file_handling does not exist')
+                    raise IOError('these input files do not exist:\n'
+                                  f'  - {fname1}\n'
+                                  f'  - {fname2}\n'
+                                  f'  - {fname1}.gz\n'
+                                  f'  - {fname2}.gz\n'
+                                  )
 
     return fname1, fname2
 
