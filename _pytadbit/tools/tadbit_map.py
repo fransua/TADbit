@@ -92,6 +92,7 @@ def run(opts):
                                           'all_r1-r2_intersection_%s.tsv' % param_hash),
                                 clean=not opts.keep_tmp, get_nread=True,
                                 mapper_binary=opts.mapper_binary,
+                                min_seq_len=opts.min_seq_len,
                                 mapper_params=opts.mapper_param, suffix=param_hash,
                                 temp_dir=temp_dir, nthreads=opts.cpus)
     else:
@@ -103,6 +104,7 @@ def run(opts):
                                 frag_map=not opts.iterative, clean=not opts.keep_tmp,
                                 windows=opts.windows, get_nread=True, skip=opts.skip,
                                 suffix=param_hash, mapper_binary=opts.mapper_binary,
+                                min_seq_len=opts.min_seq_len,
                                 mapper_params=opts.mapper_param, end_repair=not opts.no_end_repair)
 
     # adjust line count
@@ -526,6 +528,10 @@ def populate_args(parser):
                         action='store_true',
                         help='''default mapping strategy is fragment based
                         use this flag for iterative mapping''')
+
+    mapper.add_argument('--min_seq_len', dest='min_seq_len', default=15, type=int,
+                        help='''[%(default)s] when mapping strategy is fragment based,
+                        this parameter defines the minimum size of a fragment''')
 
     mapper.add_argument('--fast_fragment', dest='fast_fragment', default=False,
                         action='store_true',
