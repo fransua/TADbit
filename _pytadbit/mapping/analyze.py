@@ -1595,14 +1595,11 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
              '<== ==> opposed (Extra-self-circles)',
              '==> <== facing (Extra-dangling-ends)',
              '==> ==> both forward']
-
-    dirs = [[0 for i in range(max_len)],
-            [0 for i in range(max_len)],
-            [0 for i in range(max_len)],
-            [0 for i in range(max_len)]]
-
+    
+    dirs = np.zeros((4, max_len))
+    
     iterator = (next(fhandler) for _ in range(nreads)) if nreads else fhandler
-
+    
     if valid_pairs:
         comp_re = lambda x, y: x != y
     else:
@@ -1628,15 +1625,7 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
             dir1, dir2 = dir1 * 2, dir2
             dirs[dir1 + dir2][diff] += 1
 
-    sum_dirs = [0 for i in range(max_len)]
-    for i in range(max_len):
-        sum_dir = float(sum(dirs[d][i] for d in range(4)))
-        for d in range(4):
-            try:
-                dirs[d][i] = dirs[d][i] / sum_dir
-            except ZeroDivisionError:
-                dirs[d][i] = 0.
-            sum_dirs[i] = sum_dir
+    sum_dirs = dirs.sum(axis=0)
 
     plt.figure(figsize=(14, 9))
     if full_step:
@@ -1650,7 +1639,7 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
         axLb = plt.subplot2grid((3, 1), (2, 0), sharex=axLp)
 
     for d in range(4):
-        axLp.plot([sum(dirs[d][i:i + half_step]) / half_step
+        axLp.plot([sum(dirs[d,i:i + half_step]) / (sum(sum_dirs[i:i + half_step]) + 0.1)
                    for i in range(0, half_len - half_step, half_step)],
                   alpha=0.7, label=names[d])
 
@@ -1680,13 +1669,15 @@ def plot_strand_bias_by_distance(fnam, nreads=1000000, valid_pairs=True,
 
     if full_step:
         for d in range(4):
-            axRp.plot([sum(dirs[d][i:i + full_step]) / full_step
+            axRp.plot([sum(dirs[d,i:i + full_step]) / (
+                sum(sum_dirs[i:i + full_step]) + 0.1)
                        for i in range(half_len, full_len + full_step, full_step)],
                       alpha=0.7, label=names[d])
 
         axRp.spines['left'].set_visible(False)
         axRp.set_xticks(list(range(0, (full_len - half_len) // full_step + 1, 20)))
-        axRp.set_xticklabels([int(i) for i in range(half_len, full_len + full_step, full_step * 20)])
+        axRp.set_xticklabels([int(i) for i in range(
+            half_len, full_len + full_step, full_step * 20)])
         plt.setp(axRp.get_xticklabels(), visible=False)
         axRp.legend(title='Strand on which each read-end is mapped\n(first read-end is always smaller than second)')
         axRp.yaxis.tick_right()
