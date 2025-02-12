@@ -163,10 +163,7 @@ def transform_fastq(fastq_path, out_fastq, trim=None, r_enz=None, add_site=True,
             #  detected in case cut site and ligation site is the same
             enzymes[r_enz] = RESTRICTION_ENZYMES[r_enz].replace('|', '').lower()
         # when no end-repair was perform we only search for the single restriction cut site
-        if end_repair:
-            enz_patterns = religateds(r_enzs)
-        else:
-            enz_patterns[r_enzs[0], r_enzs[0]] = enzymes[r_enzs[0]].upper()
+        enz_patterns = religateds(r_enzs, end_repair=end_repair)
         sub_enz_patterns = {}
         len_relgs = {}
         for r_enz1, r_enz2 in enz_patterns:

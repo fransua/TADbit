@@ -220,11 +220,16 @@ def repaired(r_enz):
                                     max(len(beg), len(end))])
 
 
-def religateds(r_enzs):
+def religateds(r_enzs, end_repair=True):
     """
     returns the resulting list of all possible sequences after religation of two
     digested and repaired ends.
     """
+    enzymes = {}
+    for r_enz in r_enzs:
+        # we put in in lower case in order to escape in order to avoid being recursively
+        #  detected in case cut site and ligation site is the same
+        enzymes[r_enz] = RESTRICTION_ENZYMES[r_enz].replace('|', '').lower()    
     ligations = OrderedDict()
     for r_enz1 in r_enzs:
         for r_enz2 in r_enzs:
@@ -234,7 +239,10 @@ def religateds(r_enzs):
             _, end2 = site2.split('|')
             site1 = site1.replace('|', '')
             site2 = site2.replace('|', '')
-            ligations[(r_enz1, r_enz2)] = beg1 + end1[:len(end1)-len(beg1)] + end2
+            if end_repair:
+                ligations[(r_enz1, r_enz2)] = beg1 + end1[:len(end1)-len(beg1)] + end2
+            else:
+                ligations[(r_enz1, r_enz2)] = enzymes[r_enz1].upper()
     return ligations
 
 
